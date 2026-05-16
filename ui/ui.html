@@ -8,6 +8,103 @@
     <link rel="stylesheet" href="ui.css">
 </head>
 <body>
+    <!-- Doxmaxima Çeviri -->
+    <div class="header" style="border-bottom-color: rgba(16, 185, 129, 0.2); margin-bottom: 15px; padding-bottom: 10px;">
+        <h1 data-i18n="header_translate" style="color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);">Doxmaxima Çeviri</h1>
+        <label class="switch">
+            <input type="checkbox" id="toggle-ceviri">
+            <span class="slider round"></span>
+        </label>
+    </div>
+
+    <div class="settings-container" id="ceviri-settings" style="margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px;">
+        <!-- 1. API Anahtarları -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label data-i18n="api_keys">API Anahtarları</label>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <input type="password" id="api-gemini" placeholder="GEMINI API KEY" class="custom-input">
+                <input type="password" id="api-groq" placeholder="GROQ API KEY" class="custom-input">
+                <input type="password" id="api-deepl" placeholder="DEEPL API KEY" class="custom-input">
+            </div>
+        </div>
+
+        <!-- 2. AI Kontrol Merkezi -->
+        <div class="setting-group" style="margin-top: 5px;">
+            <div class="setting-header">
+                <label data-i18n="ai_center">AI Kontrol Merkezi</label>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <div class="custom-select-wrapper">
+                    <select id="ai-model" class="custom-select">
+                        <option value="gemini-3-flash-preview">Gemini 3.0</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5</option>
+                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Lite</option>
+                        <option value="gemini-3.1-pro-preview">Gemini 3.1 (ücretli)</option>
+                        <option value="gemini-3.1-flash-lite">Gemini 3.1 flash</option>
+                        <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 flash preview</option>
+                        <option value="DeepL-Free">DeepL Free</option>
+                        <option value="DeepL-Pro">DeepL Pro (ücretli)</option>
+                        <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4</option>
+                        <option value="moonshotai/kimi-k2-instruct-0905">Kimi K2</option>
+                        <option value="llama-3.3-70b-versatile">Llama 3.3</option>
+                    </select>
+                </div>
+                <div class="custom-select-wrapper">
+                    <select id="ai-mode" class="custom-select">
+                        <option value="tr">Türkçe Çevirisi</option>
+                        <option value="en">İngilizce Çevirisi</option>
+                        <option value="de">Almanca Çevirisi</option>
+                        <option value="ru">Rusça Çevirisi</option>
+                        <option value="zh">Çince Çevirisi</option>
+                        <option value="ja">Japonca Çevirisi</option>
+                        <option value="fr">Fransızca Çevirisi</option>
+                        <option value="it">İtalyanca Çevirisi</option>
+                        <option value="az">Azerbaycanca Çevirisi</option>
+                        <option value="es">İspanyolca Çevirisi</option>
+                        <option value="uk">Ukraynaca Çevirisi</option>
+                        <option value="pt">Portekizce Çevirisi</option>
+                        <option value="none">Sadece Özel Promptlar</option>
+                    </select>
+                </div>
+                
+                <!-- CHUNK SIZE AYARLARI -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 5px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #10b981; display: block; margin-bottom: 8px;">Motor Kapasite Ayarları (Chunk)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 9px; color: #60a5fa; text-transform: uppercase;">Gemini</label>
+                            <input type="number" id="chunk-gemini" value="400" class="custom-input" style="padding: 6px; font-size: 11px;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 9px; color: #fb923c; text-transform: uppercase;">Groq</label>
+                            <input type="number" id="chunk-groq" value="100" class="custom-input" style="padding: 6px; font-size: 11px;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 9px; color: #10b981; text-transform: uppercase;">DeepL</label>
+                            <input type="number" id="chunk-deepl" value="150" class="custom-input" style="padding: 6px; font-size: 11px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 4. Özel Promptlar -->
+        <div class="setting-group" style="margin-top: 5px;">
+            <div class="setting-header">
+                <label data-i18n="custom_prompts">Özel Promptlar</label>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <textarea id="prompt-gemini" placeholder="Gemini Özel Prompt..." class="custom-input" style="height: 60px; resize: none; font-size: 11px;"></textarea>
+                <textarea id="prompt-groq" placeholder="Groq/Llama Özel Prompt..." class="custom-input" style="height: 60px; resize: none; font-size: 11px;"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doxmaxima Player -->
     <div class="header">
         <h1 data-i18n="header_title">Doxmaxima Player</h1>
         <label class="switch">
@@ -37,6 +134,9 @@
             </button>
             <button id="download-clean-sub-btn" style="background: #0ea5e9; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
                 <span data-i18n="download_clean_btn">Temizlenmiş İndir</span>
+            </button>
+            <button id="download-filtered-sub-btn" style="background: #10b981; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+                <span data-i18n="download_filtered_btn">Filtreli İndir</span>
             </button>
         </div>
 
@@ -87,6 +187,15 @@
                 <span class="value-display" id="sub-spacing-val">0px</span>
             </div>
             <input type="range" id="sub-spacing" min="-2" max="10" step="0.5" value="0" class="custom-slider">
+        </div>
+
+        <!-- Altyazılar Arası Mesafe -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-distance" data-i18n="sub_distance">Altyazılar Arası Mesafe</label>
+                <span class="value-display" id="sub-distance-val">5px</span>
+            </div>
+            <input type="range" id="sub-distance" min="0" max="50" step="1" value="5" class="custom-slider">
         </div>
 
         <!-- Altyazı Hizası -->

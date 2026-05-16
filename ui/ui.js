@@ -17,7 +17,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     const subStrokeColor = document.getElementById('sub-stroke-color');
     const subAlign = document.getElementById('sub-align');
     const subLockX = document.getElementById('sub-lock-x');
+    const subDistance = document.getElementById('sub-distance');
+    const subDistanceVal = document.getElementById('sub-distance-val');
     const uiLang = document.getElementById('ui-lang');
+    // Çeviri Ayarları Elementleri
+    const toggleCeviri = document.getElementById('toggle-ceviri');
+    const apiGeminiInput = document.getElementById('api-gemini');
+    const apiGroqInput = document.getElementById('api-groq');
+    const apiDeeplInput = document.getElementById('api-deepl');
+    const chunkGeminiInput = document.getElementById('chunk-gemini');
+    const chunkGroqInput = document.getElementById('chunk-groq');
+    const chunkDeeplInput = document.getElementById('chunk-deepl');
+    const promptGeminiInput = document.getElementById('prompt-gemini');
+    const promptGroqInput = document.getElementById('prompt-groq');
+
+    const aiModelSelect = document.getElementById('ai-model');
+    const aiModeSelect = document.getElementById('ai-mode');
+
+    const translationModes = [
+        { code: "tr", name: "Türkçe Çevirisi" },
+        { code: "en", name: "İngilizce Çevirisi" },
+        { code: "de", name: "Almanca Çevirisi" },
+        { code: "ru", name: "Rusça Çevirisi" },
+        { code: "zh", name: "Çince Çevirisi" },
+        { code: "ja", name: "Japonca Çevirisi" },
+        { code: "fr", name: "Fransızca Çevirisi" },
+        { code: "it", name: "İtalyanca Çevirisi" },
+        { code: "az", name: "Azerbaycanca Çevirisi" },
+        { code: "es", name: "İspanyolca Çevirisi" },
+        { code: "uk", name: "Ukraynaca Çevirisi" },
+        { code: "pt", name: "Portekizce Çevirisi" },
+        { code: "none", name: "Sadece Özel Promptlar" }
+    ];
+
+    let deeplTargetLangs = [
+        { code: "TR", name: "Türkçe" }
+    ];
+
+    const fetchDeeplLanguages = async (apiKey) => {
+        if (!apiKey || apiKey.length < 5) return;
+        const baseUrl = apiKey.endsWith(':fx') ? 'https://api-free.deepl.com/v2' : 'https://api.deepl.com/v2';
+        try {
+            const res = await fetch(`${baseUrl}/languages?type=target`, {
+                headers: { 'Authorization': `DeepL-Auth-Key ${apiKey}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                deeplTargetLangs = data.map(l => ({ code: l.language, name: l.name }));
+                if (aiModelSelect && aiModelSelect.value.startsWith('DeepL')) {
+                    updateAiModeOptions();
+                }
+            }
+        } catch (e) {
+            console.error("[Doxmaxima] DeepL dilleri çekilemedi", e);
+        }
+    };
+
+    const updateAiModeOptions = () => {
+        if (!aiModelSelect || !aiModeSelect) return;
+        
+        const isDeepl = aiModelSelect.value.startsWith('DeepL');
+        const options = isDeepl ? deeplTargetLangs : translationModes;
+        
+        const currentValue = aiModeSelect.value;
+        
+        aiModeSelect.innerHTML = '';
+        options.forEach(opt => {
+            const optionEl = document.createElement('option');
+            optionEl.value = opt.code;
+            optionEl.textContent = opt.name;
+            aiModeSelect.appendChild(optionEl);
+        });
+        
+        const hasOption = Array.from(aiModeSelect.options).some(o => o.value.toLowerCase() === currentValue.toLowerCase());
+        if (hasOption) {
+            aiModeSelect.value = isDeepl ? currentValue.toUpperCase() : currentValue.toLowerCase();
+        }
+    };
 
     // Dil dosyasını yükle (dil.json)
     let translations = {};
@@ -84,7 +160,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         subStroke: '1px',
         subStrokeColor: '#000000',
         subAlign: 'center',
-        subLockX: true
+        subLockX: true,
+        subDistance: 5,
+        
+        // Çeviri Ayarları
+        ceviriEnabled: false,
+        apiGemini: '',
+        apiGroq: '',
+        apiDeepl: '',
+        chunkGemini: 400,
+        chunkGroq: 100,
+        chunkDeepl: 150,
+        promptGemini: '',
+        promptGroq: '',
+        aiModel: 'gemini-3-flash-preview',
+        aiMode: 'tr'
     }, (items) => {
         // --- 1. Önce Dili Ayarla ---
         currentLang = items.uiLang;
@@ -116,6 +206,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         subStrokeColor.value = items.subStrokeColor;
         subAlign.value = items.subAlign;
         subLockX.checked = items.subLockX;
+        
+        if (subDistance) {
+            subDistance.value = items.subDistance;
+            subDistanceVal.textContent = items.subDistance + 'px';
+        }
+
+        // --- 3. Çeviri Ayarlarını Yükle ---
+        if (toggleCeviri) toggleCeviri.checked = items.ceviriEnabled;
+        if (apiGeminiInput) apiGeminiInput.value = items.apiGemini;
+        if (apiGroqInput) apiGroqInput.value = items.apiGroq;
+        if (apiDeeplInput) {
+            apiDeeplInput.value = items.apiDeepl;
+            fetchDeeplLanguages(items.apiDeepl); // DeepL dillerini API'den çek
+        }
+        if (chunkGeminiInput) chunkGeminiInput.value = items.chunkGemini;
+        if (chunkGroqInput) chunkGroqInput.value = items.chunkGroq;
+        if (chunkDeeplInput) chunkDeeplInput.value = items.chunkDeepl;
+        if (promptGeminiInput) promptGeminiInput.value = items.promptGemini;
+        if (promptGroqInput) promptGroqInput.value = items.promptGroq;
+
+        if (aiModelSelect) {
+            aiModelSelect.value = items.aiModel;
+            updateAiModeOptions();
+        }
+        if (aiModeSelect) {
+            const isDeepl = items.aiModel && items.aiModel.startsWith('DeepL');
+            const targetVal = isDeepl ? items.aiMode.toUpperCase() : items.aiMode.toLowerCase();
+            
+            // Seçenekler arasında varsa ayarla
+            if (Array.from(aiModeSelect.options).some(o => o.value === targetVal)) {
+                aiModeSelect.value = targetVal;
+            }
+        }
     });
 
     // Değişiklikleri dinle ve kaydet (Her ayar değiştiğinde çalışır)
@@ -134,7 +257,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             subStroke: subStroke.value,
             subStrokeColor: subStrokeColor.value,
             subAlign: subAlign.value,
-            subLockX: subLockX.checked
+            subLockX: subLockX.checked,
+            subDistance: subDistance ? parseInt(subDistance.value) : 5,
+            
+            ceviriEnabled: toggleCeviri ? toggleCeviri.checked : false,
+            apiGemini: apiGeminiInput ? apiGeminiInput.value : '',
+            apiGroq: apiGroqInput ? apiGroqInput.value : '',
+            apiDeepl: apiDeeplInput ? apiDeeplInput.value : '',
+            chunkGemini: chunkGeminiInput ? parseInt(chunkGeminiInput.value) : 400,
+            chunkGroq: chunkGroqInput ? parseInt(chunkGroqInput.value) : 100,
+            chunkDeepl: chunkDeeplInput ? parseInt(chunkDeeplInput.value) : 150,
+            promptGemini: promptGeminiInput ? promptGeminiInput.value : '',
+            promptGroq: promptGroqInput ? promptGroqInput.value : '',
+            aiModel: aiModelSelect ? aiModelSelect.value : 'gemini-3-flash-preview',
+            aiMode: aiModeSelect ? aiModeSelect.value : 'tr'
         };
 
         chrome.storage.sync.set(settings, () => {
@@ -192,6 +328,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     subStroke.addEventListener('change', saveSettings);
     subAlign.addEventListener('change', saveSettings);
     subLockX.addEventListener('change', saveSettings);
+    
+    if (subDistance) {
+        subDistance.addEventListener('input', (e) => {
+            subDistanceVal.textContent = e.target.value + 'px';
+            saveSettings();
+        });
+    }
+
+    if (aiModelSelect) {
+        aiModelSelect.addEventListener('change', () => {
+            updateAiModeOptions();
+            saveSettings();
+        });
+    }
+
+    if (aiModeSelect) {
+        aiModeSelect.addEventListener('change', saveSettings);
+    }
+    
+    // Çeviri Ayarları Kayıt Dinleyicileri
+    if (toggleCeviri) toggleCeviri.addEventListener('change', saveSettings);
+    if (apiGeminiInput) apiGeminiInput.addEventListener('input', saveSettings);
+    if (apiGroqInput) apiGroqInput.addEventListener('input', saveSettings);
+    
+    let deeplDebounce;
+    if (apiDeeplInput) {
+        apiDeeplInput.addEventListener('input', (e) => {
+            saveSettings();
+            clearTimeout(deeplDebounce);
+            deeplDebounce = setTimeout(() => {
+                fetchDeeplLanguages(e.target.value);
+            }, 1500);
+        });
+    }
+    
+    if (chunkGeminiInput) chunkGeminiInput.addEventListener('input', saveSettings);
+    if (chunkGroqInput) chunkGroqInput.addEventListener('input', saveSettings);
+    if (chunkDeeplInput) chunkDeeplInput.addEventListener('input', saveSettings);
+    if (promptGeminiInput) promptGeminiInput.addEventListener('input', saveSettings);
+    if (promptGroqInput) promptGroqInput.addEventListener('input', saveSettings);
 
     const downloadSubBtn = document.getElementById('download-sub-btn');
     if (downloadSubBtn) {
@@ -217,6 +393,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (tabs[0] && tabs[0].url.includes("youtube.com")) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: "DOWNLOAD_SUBTITLE_CLEAN"
+                    }).catch(() => {
+                        alert(currentLang === 'tr' ? "Lütfen YouTube sayfasını yenileyin ve tekrar deneyin." : "Please refresh the YouTube page and try again.");
+                    });
+                } else {
+                    alert(currentLang === 'tr' ? "Lütfen bir YouTube video sayfasına gidin." : "Please navigate to a YouTube video page.");
+                }
+            });
+        });
+    }
+
+    const downloadFilteredSubBtn = document.getElementById('download-filtered-sub-btn');
+    if (downloadFilteredSubBtn) {
+        downloadFilteredSubBtn.addEventListener('click', () => {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                if (tabs[0] && tabs[0].url.includes("youtube.com")) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        type: "DOWNLOAD_SUBTITLE_FILTERED"
                     }).catch(() => {
                         alert(currentLang === 'tr' ? "Lütfen YouTube sayfasını yenileyin ve tekrar deneyin." : "Please refresh the YouTube page and try again.");
                     });

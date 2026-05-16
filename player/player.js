@@ -24,10 +24,23 @@ class DoxSubtitleManager {
             subStroke: '2px',
             subStrokeColor: '#000000',
             subAlign: 'center',
-            subLockX: true
+            subLockX: true,
+            subDistance: 5
         }, (items) => {
             this.settings = items;
             this.applyStyles();
+        });
+
+        // YouTube SPA (F5 atmadan sayfa değişimi) için dinleyici
+        window.addEventListener('yt-navigate-finish', () => {
+            console.log("Doxmaxima: Yeni video yüklendi, stiller uygulanıyor...");
+            this.applyStyles();
+            
+            // Eğer player değiştiyse observer'ı tekrar bağla
+            const playerEl = document.getElementById('movie_player');
+            if (playerEl && this.resizeObserver) {
+                this.resizeObserver.observe(playerEl);
+            }
         });
 
         // Kullanıcı arayüzden (ui.html) ayar değiştirdiğinde anlık dinle
@@ -238,6 +251,8 @@ class DoxSubtitleManager {
             `;
         }
 
+        const distancePx = this.settings.subDistance !== undefined ? this.settings.subDistance : 5;
+
         // YouTube'un kendi altyazı CSS sınıflarını eziyoruz
         styleEl.innerHTML = `
             /* Metin Blokları */
@@ -254,6 +269,24 @@ class DoxSubtitleManager {
                 text-align: ${this.settings.subAlign} !important;
             }
             
+            /* Konteyner'ı flex yapıp altyazıları dizeceğiz */
+            #ytp-caption-window-container {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-end !important;
+                align-items: center !important;
+                position: absolute !important;
+                bottom: var(--dox-sub-bottom, 80px) !important;
+                top: auto !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                gap: ${distancePx}px !important;
+                pointer-events: none !important;
+            }
+
             /* Kapsayıcılara da metin hizalama verelim ki tam çalışsın */
             .caption-window {
                 overflow: visible !important;
@@ -262,9 +295,10 @@ class DoxSubtitleManager {
                 margin-bottom: 0px !important;
                 padding-bottom: 0px !important;
                 
-                /* YOUTUBE FİZİĞİNİ DEVRE DIŞI BIRAKMA: Tailwind tarzı serbest absolute konumlandırma */
+                /* YOUTUBE FİZİĞİNİ DEVRE DIŞI BIRAKMA: Konteyner bottom kullanıyor */
+                position: relative !important;
                 top: auto !important;
-                bottom: var(--dox-sub-bottom, 80px) !important;
+                bottom: auto !important;
                 
                 ${lockXCss}
             }

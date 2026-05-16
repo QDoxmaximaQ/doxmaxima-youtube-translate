@@ -247,3 +247,33 @@ label {
 .custom-color:hover::-webkit-color-swatch {
     border-color: var(--accent);
 }
+
+/* Custom Input and Textarea */
+.custom-input {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: 'Inter', monospace;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.custom-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+}
+
+/* Translation Green Accent */
+input#toggle-ceviri:checked + .slider {
+    background-color: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+}
+
+input#toggle-ceviri:checked + .slider:before {
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}

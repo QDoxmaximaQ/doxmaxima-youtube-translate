@@ -22,6 +22,8 @@
             ],
             "js": [
                 "player/player.js",
+                "altyaziyi-temizleme/altyazi-temizleme/altyazi-temizleme.js",
+                "altyaziyi-temizleme/altyazi-filtreleme/altyazi-filtreleme.js",
                 "altyaziyi-temizleme/altyazi-bulma/altyazi-indirme.js"
             ],
             "run_at": "document_end"
