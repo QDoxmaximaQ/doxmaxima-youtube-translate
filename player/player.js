@@ -81,7 +81,9 @@ class DoxSubtitleManager {
             window.doxDragInitialized = true;
             let isDragging = false;
             let startY = 0;
+            let startX = 0;
             let startBottom = 80; // Varsayılan başlangıç 80px
+            let startLeft = 0;
 
             document.addEventListener('mousedown', (e) => {
                 if (!this.settings || !this.settings.playerEnabled) return; // Player kapalıysa orijinal YouTube çalışsın
@@ -93,8 +95,13 @@ class DoxSubtitleManager {
                     e.stopPropagation();
                     e.preventDefault();
                     startY = e.clientY;
+                    startX = e.clientX;
+                    
                     const currentBottom = document.documentElement.style.getPropertyValue('--dox-sub-bottom');
                     startBottom = currentBottom ? parseFloat(currentBottom) : 80;
+                    
+                    const currentLeft = document.documentElement.style.getPropertyValue('--dox-sub-left');
+                    startLeft = currentLeft ? parseFloat(currentLeft) : 0;
                 }
             }, true);
 
@@ -104,6 +111,7 @@ class DoxSubtitleManager {
                 if (isDragging) {
                     e.stopPropagation();
                     e.preventDefault();
+                    
                     let deltaY = e.clientY - startY;
                     let newBottom = startBottom - deltaY;
                     
@@ -114,6 +122,25 @@ class DoxSubtitleManager {
                     if (newBottom > videoHeight - 40) newBottom = videoHeight - 40;
 
                     document.documentElement.style.setProperty('--dox-sub-bottom', newBottom + 'px');
+                    
+                    // X Ekseni Sürükleme (Sadece subLockX kapalıysa)
+                    if (!this.settings.subLockX) {
+                        let deltaX = e.clientX - startX;
+                        let newLeft = startLeft + deltaX;
+                        
+                        // Sınırlar (X ekseni) - Altyazı penceresinin genişliğine göre sınırları tam hesaplıyoruz
+                        const videoWidth = videoEl ? videoEl.clientWidth : window.innerWidth;
+                        const cwEl = document.querySelector('.caption-window');
+                        const cwWidth = cwEl ? cwEl.clientWidth : 0;
+                        
+                        let maxDistance = (videoWidth / 2) - (cwWidth / 2) - 20;
+                        if (maxDistance < 0) maxDistance = 0; // Kutu çok büyükse sıfıra kilitle
+                        
+                        if (newLeft < -maxDistance) newLeft = -maxDistance;
+                        if (newLeft > maxDistance) newLeft = maxDistance;
+                        
+                        document.documentElement.style.setProperty('--dox-sub-left', newLeft + 'px');
+                    }
                     
                     // Altyazı %60'ın üstüne çıkarsa butonu aşağı al (Taşmayı önlemek için)
                     if (newBottom > videoHeight * 0.60) {
@@ -249,9 +276,27 @@ class DoxSubtitleManager {
                 margin-left: 0px !important;
                 transform: none !important;
             `;
+        } else {
+            lockXCss = `
+                width: auto !important;
+                left: 0 !important;
+                right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                transform: translateX(var(--dox-sub-left, 0px)) !important;
+            `;
         }
 
         const distancePx = this.settings.subDistance !== undefined ? this.settings.subDistance : 5;
+
+        let handleAlignCss = '';
+        if (this.settings.subAlign === 'left') {
+            handleAlignCss = 'left: 10px; right: auto; transform: none;';
+        } else if (this.settings.subAlign === 'right') {
+            handleAlignCss = 'left: auto; right: 10px; transform: none;';
+        } else {
+            handleAlignCss = 'left: 50%; right: auto; transform: translateX(-50%);';
+        }
 
         // YouTube'un kendi altyazı CSS sınıflarını eziyoruz
         styleEl.innerHTML = `
@@ -267,6 +312,7 @@ class DoxSubtitleManager {
                 border-radius: 6px !important;
                 padding: 4px 8px !important;
                 text-align: ${this.settings.subAlign} !important;
+                line-height: calc(1.3em + ${distancePx}px) !important;
             }
             
             /* Konteyner'ı flex yapıp altyazıları dizeceğiz */
@@ -309,8 +355,7 @@ class DoxSubtitleManager {
                 position: absolute;
                 top: var(--dox-handle-top, -32px); /* JS ile dinamik yönetilir */
                 bottom: var(--dox-handle-bottom, auto);
-                left: 50%;
-                transform: translateX(-50%);
+                ${handleAlignCss}
                 background: rgba(0, 0, 0, 0.8);
                 color: white;
                 padding: 5px 14px;
@@ -318,6 +363,9 @@ class DoxSubtitleManager {
                 font-size: 13px;
                 font-family: sans-serif;
                 font-weight: bold;
+                white-space: nowrap !important;
+                min-width: 85px !important;
+                text-align: center !important;
                 /* Sadece buton tıklanabilir olacak */
                 pointer-events: auto !important;
                 cursor: grab !important;
