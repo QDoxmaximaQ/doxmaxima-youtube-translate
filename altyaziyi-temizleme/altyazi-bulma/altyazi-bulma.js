@@ -56,6 +56,10 @@
 
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
+        if (!window.location.pathname.startsWith('/watch')) {
+            return originalFetch.apply(this, args);
+        }
+
         const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
         if (url.includes('/api/timedtext')) {
             // Arka planda butondan manuel indirme için VTT linkini oluşturup kaydet
@@ -110,6 +114,10 @@
     };
 
     XMLHttpRequest.prototype.send = function(...args) {
+        if (!window.location.pathname.startsWith('/watch')) {
+            return originalSend.apply(this, args);
+        }
+
         if (this._ytSubUrl && this._ytSubUrl.includes('/api/timedtext')) {
             handleSubtitleUrl(this._ytSubUrl);
             

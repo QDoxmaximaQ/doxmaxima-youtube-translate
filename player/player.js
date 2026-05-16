@@ -86,6 +86,7 @@ class DoxSubtitleManager {
             let startLeft = 0;
 
             document.addEventListener('mousedown', (e) => {
+                if (!window.location.pathname.startsWith('/watch')) return;
                 if (!this.settings || !this.settings.playerEnabled) return; // Player kapalıysa orijinal YouTube çalışsın
                 
                 const cw = e.target.closest('.caption-window');
@@ -106,6 +107,7 @@ class DoxSubtitleManager {
             }, true);
 
             document.addEventListener('mousemove', (e) => {
+                if (!window.location.pathname.startsWith('/watch')) return;
                 if (!this.settings || !this.settings.playerEnabled) return; // Player kapalıysa orijinal YouTube çalışsın
                 
                 if (isDragging) {
@@ -191,6 +193,7 @@ class DoxSubtitleManager {
 
             // Butona tıklandığında videonun durmasını / etkileşime girmesini engeller
             document.addEventListener('click', (e) => {
+                if (!window.location.pathname.startsWith('/watch')) return;
                 if (!this.settings || !this.settings.playerEnabled) return;
                 const cw = e.target.closest('.caption-window');
                 if (cw) {
@@ -200,6 +203,7 @@ class DoxSubtitleManager {
             }, true);
             
             document.addEventListener('pointerdown', (e) => {
+                if (!window.location.pathname.startsWith('/watch')) return;
                 if (!this.settings || !this.settings.playerEnabled) return;
                 const cw = e.target.closest('.caption-window');
                 if (cw) {
@@ -210,6 +214,12 @@ class DoxSubtitleManager {
     }
 
     applyStyles() {
+        // Sadece /watch (video) sayfasında isek çalıştır, değilse stilleri kaldır
+        if (!window.location.pathname.startsWith('/watch')) {
+            this.removeStyles();
+            return;
+        }
+
         // Eğer kullanıcı eklentiyi kapattıysa, bizim stilleri sil
         if (!this.settings || !this.settings.playerEnabled) {
             this.removeStyles();

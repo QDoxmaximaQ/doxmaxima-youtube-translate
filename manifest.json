@@ -18,7 +18,7 @@
     "content_scripts": [
         {
             "matches": [
-                "https://www.youtube.com/watch*"
+                "*://*.youtube.com/*"
             ],
             "js": [
                 "player/player.js",
@@ -30,7 +30,7 @@
         },
         {
             "matches": [
-                "https://www.youtube.com/watch*"
+                "*://*.youtube.com/*"
             ],
             "js": [
                 "altyaziyi-temizleme/altyazi-temizleme/altyazi-temizleme.js",
