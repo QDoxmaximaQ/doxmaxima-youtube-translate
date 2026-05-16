@@ -1,0 +1,54 @@
+{
+    "manifest_version": 3,
+    "name": "Doxmaxima Youtube Ceviri",
+    "version": "1.0",
+    "icons": {
+        "256": "resimler/icon.png"
+    },
+    "action": {
+        "default_popup": "ui/ui.html",
+        "default_icon": "resimler/icon.png"
+    },
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "https://www.youtube.com/"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://www.youtube.com/watch*"
+            ],
+            "js": [
+                "player/player.js",
+                "altyaziyi-temizleme/altyazi-bulma/altyazi-indirme.js"
+            ],
+            "run_at": "document_end"
+        },
+        {
+            "matches": [
+                "https://www.youtube.com/watch*"
+            ],
+            "js": [
+                "altyaziyi-temizleme/altyazi-temizleme/altyazi-temizleme.js",
+                "altyaziyi-temizleme/altyazi-bulma/altyazi-bulma.js"
+            ],
+            "world": "MAIN",
+            "run_at": "document_start"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "altyaziyi-temizleme/altyazi-bulma/altyazi-bulma.js",
+                "altyaz*/*",
+                "*"
+            ],
+            "matches": [
+                "*://*.youtube.com/*",
+                "<all_urls>"
+            ]
+        }
+    ]
+}

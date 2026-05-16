@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Doxmaxima Ayarlar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+    <div class="header">
+        <h1 data-i18n="header_title">Doxmaxima Player</h1>
+        <label class="switch">
+            <input type="checkbox" id="toggle-player" checked>
+            <span class="slider round"></span>
+        </label>
+    </div>
+
+    <!-- Dil Seçici -->
+    <div class="setting-group" style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;">
+        <div class="setting-header">
+            <label for="ui-lang" data-i18n="lang_label">Arayüz Dili:</label>
+            <div class="custom-select-wrapper" style="width: 120px;">
+                <select id="ui-lang" class="custom-select" style="padding: 6px 12px; height: auto;">
+                    <option value="tr">Türkçe</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <!-- Altyazı İndirme Butonları -->
+        <div class="setting-group" style="display: flex; gap: 10px; justify-content: center; align-items: center; padding: 5px 0 20px 0; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
+            <button id="download-sub-btn" style="background: #334155; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+                <span data-i18n="download_btn">Orijinal İndir</span>
+            </button>
+            <button id="download-clean-sub-btn" style="background: #0ea5e9; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+                <span data-i18n="download_clean_btn">Temizlenmiş İndir</span>
+            </button>
+        </div>
+
+        <!-- Altyazı Boyutu -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-size" data-i18n="sub_size">Altyazı Boyutu</label>
+                <span class="value-display" id="sub-size-val">24px</span>
+            </div>
+            <input type="range" id="sub-size" min="12" max="48" value="24" class="custom-slider">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label for="sub-dynamic-size" data-i18n="sub_dynamic_desc" style="font-size: 11px; color: var(--text-secondary); cursor: pointer;">Tam ekranda otomatik büyür</label>
+                <label class="switch switch-small">
+                    <input type="checkbox" id="sub-dynamic-size" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Altyazı Fontu -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-font" data-i18n="sub_font">Altyazı Fontu</label>
+            </div>
+            <div class="custom-select-wrapper">
+                <select id="sub-font" class="custom-select">
+                    <option value="Inter, sans-serif">Inter</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Altyazı Kalınlığı -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-weight" data-i18n="sub_weight">Yazı Kalınlığı</label>
+                <span class="value-display" id="sub-weight-val">400</span>
+            </div>
+            <input type="range" id="sub-weight" min="100" max="900" step="1" value="400" class="custom-slider">
+        </div>
+
+        <!-- Altyazı Mesafesi -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-spacing" data-i18n="sub_spacing">Harf Mesafesi</label>
+                <span class="value-display" id="sub-spacing-val">0px</span>
+            </div>
+            <input type="range" id="sub-spacing" min="-2" max="10" step="0.5" value="0" class="custom-slider">
+        </div>
+
+        <!-- Altyazı Hizası -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-align" data-i18n="sub_align">Yazı Hizası</label>
+            </div>
+            <div class="custom-select-wrapper">
+                <select id="sub-align" class="custom-select">
+                    <option value="left" data-i18n="align_left">Sol</option>
+                    <option value="center" data-i18n="align_center" selected>Orta</option>
+                    <option value="right" data-i18n="align_right">Sağ</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <label for="sub-lock-x" data-i18n="sub_lock_x_desc" style="font-size: 11px; color: var(--text-secondary); cursor: pointer;">Tam ortalar, sağa-sola kaymayı engeller</label>
+                <label class="switch switch-small">
+                    <input type="checkbox" id="sub-lock-x" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="color-settings">
+            <!-- Altyazı Rengi -->
+            <div class="setting-group color-group">
+                <label for="sub-color" data-i18n="sub_color">Yazı Rengi</label>
+                <input type="color" id="sub-color" value="#ffffff" class="custom-color">
+            </div>
+
+            <!-- Arkaplan Rengi -->
+            <div class="setting-group color-group">
+                <label for="sub-bg-color" data-i18n="sub_bg_color">Arkaplan</label>
+                <input type="color" id="sub-bg-color" value="#000000" class="custom-color">
+            </div>
+
+            <!-- Kenarlık Rengi -->
+            <div class="setting-group color-group">
+                <label for="sub-stroke-color" data-i18n="sub_stroke_color">Kenarlık Rengi</label>
+                <input type="color" id="sub-stroke-color" value="#000000" class="custom-color">
+            </div>
+        </div>
+
+        <!-- Arkaplan Saydamlığı -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-bg-opacity" data-i18n="sub_bg_opacity">Arkaplan Saydamlığı</label>
+                <span class="value-display" id="sub-bg-opacity-val">50%</span>
+            </div>
+            <input type="range" id="sub-bg-opacity" min="0" max="100" value="50" class="custom-slider">
+        </div>
+
+        <!-- Yazı Kenarlığı -->
+        <div class="setting-group">
+            <div class="setting-header">
+                <label for="sub-stroke" data-i18n="sub_stroke">Yazı Kenarlığı</label>
+            </div>
+            <div class="custom-select-wrapper">
+                <select id="sub-stroke" class="custom-select">
+                    <option value="none" data-i18n="stroke_none">Yok</option>
+                    <option value="0.5px" data-i18n="stroke_light">İnce</option>
+                    <option value="1px" data-i18n="stroke_medium" selected>Orta</option>
+                    <option value="2px" data-i18n="stroke_heavy">Kalın</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <script src="ui.js"></script>
+</body>
+</html>
