@@ -50,26 +50,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         { code: "none", name: "Sadece Özel Promptlar" }
     ];
 
-    let deeplTargetLangs = [
-        { code: "TR", name: "Türkçe" }
-    ];
+    let deeplTargetLangs = [];
+    let isFetchingDeepl = false;
+    let deeplFetchError = false;
+    let savedAiMode = null;
 
     const fetchDeeplLanguages = async (apiKey) => {
-        if (!apiKey || apiKey.length < 5) return;
-        const baseUrl = apiKey.endsWith(':fx') ? 'https://api-free.deepl.com/v2' : 'https://api.deepl.com/v2';
+        if (!apiKey || apiKey.length < 5) {
+            deeplTargetLangs = [];
+            deeplFetchError = false;
+            if (aiModelSelect && aiModelSelect.value.startsWith('DeepL')) updateAiModeOptions();
+            return;
+        }
+
+        const cleanKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+        const baseUrl = cleanKey.endsWith(':fx') ? 'https://api-free.deepl.com/v2' : 'https://api.deepl.com/v2';
+        
+        isFetchingDeepl = true;
+        deeplFetchError = false;
+        
+        if (aiModelSelect && aiModelSelect.value.startsWith('DeepL')) {
+            updateAiModeOptions();
+        }
+
         try {
             const res = await fetch(`${baseUrl}/languages?type=target`, {
-                headers: { 'Authorization': `DeepL-Auth-Key ${apiKey}` }
+                headers: { 'Authorization': `DeepL-Auth-Key ${cleanKey}` }
             });
             if (res.ok) {
                 const data = await res.json();
                 deeplTargetLangs = data.map(l => ({ code: l.language, name: l.name }));
-                if (aiModelSelect && aiModelSelect.value.startsWith('DeepL')) {
-                    updateAiModeOptions();
-                }
+            } else {
+                deeplTargetLangs = [];
+                deeplFetchError = true;
             }
         } catch (e) {
             console.error("[Doxmaxima] DeepL dilleri çekilemedi", e);
+            deeplTargetLangs = [];
+            deeplFetchError = true;
+        } finally {
+            isFetchingDeepl = false;
+            if (aiModelSelect && aiModelSelect.value.startsWith('DeepL')) {
+                updateAiModeOptions();
+            }
         }
     };
 
@@ -77,11 +100,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!aiModelSelect || !aiModeSelect) return;
         
         const isDeepl = aiModelSelect.value.startsWith('DeepL');
-        const options = isDeepl ? deeplTargetLangs : translationModes;
-        
         const currentValue = aiModeSelect.value;
         
         aiModeSelect.innerHTML = '';
+        
+        if (isDeepl) {
+            if (isFetchingDeepl) {
+                aiModeSelect.disabled = true;
+                const optionEl = document.createElement('option');
+                optionEl.value = "";
+                optionEl.textContent = currentLang === 'tr' ? "Diller Yükleniyor..." : "Loading Languages...";
+                aiModeSelect.appendChild(optionEl);
+                return;
+            }
+            
+            if (deeplFetchError || deeplTargetLangs.length === 0) {
+                aiModeSelect.disabled = true;
+                const optionEl = document.createElement('option');
+                optionEl.value = "";
+                optionEl.textContent = currentLang === 'tr' ? "API Anahtarı Eksik/Hatalı" : "API Key Error/Missing";
+                aiModeSelect.appendChild(optionEl);
+                return;
+            }
+        }
+        
+        // Eğer DeepL değilse veya DeepL yüklemesi başarılıysa aktif et
+        aiModeSelect.disabled = false;
+        const options = isDeepl ? deeplTargetLangs : translationModes;
+        
         options.forEach(opt => {
             const optionEl = document.createElement('option');
             optionEl.value = opt.code;
@@ -89,9 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             aiModeSelect.appendChild(optionEl);
         });
         
-        const hasOption = Array.from(aiModeSelect.options).some(o => o.value.toLowerCase() === currentValue.toLowerCase());
+        // Önce kullanıcının kaydettiği dili (savedAiMode) veya o anki değeri kontrol et
+        const targetValue = savedAiMode || currentValue;
+        
+        const hasOption = Array.from(aiModeSelect.options).some(o => o.value.toLowerCase() === targetValue.toLowerCase());
         if (hasOption) {
-            aiModeSelect.value = isDeepl ? currentValue.toUpperCase() : currentValue.toLowerCase();
+            aiModeSelect.value = isDeepl ? targetValue.toUpperCase() : targetValue.toLowerCase();
         }
     };
 
@@ -233,8 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (aiModeSelect) {
             const isDeepl = items.aiModel && items.aiModel.startsWith('DeepL');
             const targetVal = isDeepl ? items.aiMode.toUpperCase() : items.aiMode.toLowerCase();
+            savedAiMode = targetVal;
             
-            // Seçenekler arasında varsa ayarla
+            // Eğer seçenekler anında varsa hemen ayarla (örneğin Gemini için)
             if (Array.from(aiModeSelect.options).some(o => o.value === targetVal)) {
                 aiModeSelect.value = targetVal;
             }
@@ -344,7 +394,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (aiModeSelect) {
-        aiModeSelect.addEventListener('change', saveSettings);
+        aiModeSelect.addEventListener('change', () => {
+            savedAiMode = aiModeSelect.value;
+            saveSettings();
+        });
     }
     
     // Çeviri Ayarları Kayıt Dinleyicileri
@@ -410,6 +463,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (tabs[0] && tabs[0].url.includes("youtube.com")) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: "DOWNLOAD_SUBTITLE_FILTERED"
+                    }).catch(() => {
+                        alert(currentLang === 'tr' ? "Lütfen YouTube sayfasını yenileyin ve tekrar deneyin." : "Please refresh the YouTube page and try again.");
+                    });
+                } else {
+                    alert(currentLang === 'tr' ? "Lütfen bir YouTube video sayfasına gidin." : "Please navigate to a YouTube video page.");
+                }
+            });
+        });
+    }
+
+    const downloadTranslatedSubBtn = document.getElementById('download-translated-sub-btn');
+    if (downloadTranslatedSubBtn) {
+        downloadTranslatedSubBtn.addEventListener('click', () => {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                if (tabs[0] && tabs[0].url.includes("youtube.com")) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        type: "DOWNLOAD_SUBTITLE_TRANSLATED"
                     }).catch(() => {
                         alert(currentLang === 'tr' ? "Lütfen YouTube sayfasını yenileyin ve tekrar deneyin." : "Please refresh the YouTube page and try again.");
                     });

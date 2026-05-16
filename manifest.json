@@ -12,8 +12,14 @@
     "permissions": [
         "storage"
     ],
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
     "host_permissions": [
-        "https://www.youtube.com/"
+        "https://www.youtube.com/",
+        "https://api.deepl.com/*",
+        "https://api-free.deepl.com/*"
     ],
     "content_scripts": [
         {
@@ -24,6 +30,7 @@
                 "player/player.js",
                 "altyaziyi-temizleme/altyazi-temizleme/altyazi-temizleme.js",
                 "altyaziyi-temizleme/altyazi-filtreleme/altyazi-filtreleme.js",
+                "altyaziyi-temizleme/altyazi-rebuild/altyazi-rebuild.js",
                 "altyaziyi-temizleme/altyazi-bulma/altyazi-indirme.js"
             ],
             "run_at": "document_end"

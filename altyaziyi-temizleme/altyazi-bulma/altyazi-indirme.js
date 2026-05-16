@@ -2,6 +2,7 @@ console.log("[Doxmaxima] Altyazı İndirme Scripti Yüklendi (Content Script)");
 
 // 2. Interceptor'dan gelen veriyi dinleyip hafızada tutuyoruz
 let sonAltyaziVerisi = null;
+let sonCeviriliAltyaziVerisi = null;
 
 window.addEventListener("message", (event) => {
     // Sadece aynı sayfadan gelen mesajları kabul et
@@ -15,11 +16,63 @@ window.addEventListener("message", (event) => {
         };
         console.log("[Doxmaxima] Altyazı hafızaya alındı, butona basılınca indirilecek:", sonAltyaziVerisi.filename);
     }
+    
+    // Çeviri Yöneticisi İsteğini Dinle (altyazi-bulma.js MAIN world'den gelir)
+    if (event.data && event.data.type === "DOXMAXIMA_TRANSLATE_REQUEST") {
+        chrome.storage.sync.get(['ceviriEnabled', 'apiDeepl', 'aiMode', 'chunkDeepl'], (settings) => {
+            if (!settings.ceviriEnabled) {
+                // Çeviri kapalıysa orijinalini aynen dön
+                window.postMessage({ type: "DOXMAXIMA_TRANSLATE_RESPONSE", id: event.data.id, translatedVtt: event.data.vttText }, "*");
+                return;
+            }
+            
+            const currentVideoId = new URLSearchParams(window.location.search).get('v');
+            
+            console.log("[Doxmaxima] Çeviri yöneticisi tetiklendi. Orijinal VTT filtreleniyor...");
+            let filteredText = "";
+            try {
+                filteredText = window.DoxmaximaSubFilter.filterSubtitle(event.data.vttText);
+            } catch (e) {
+                console.error("[Doxmaxima] Filtreleme hatası:", e);
+                window.postMessage({ type: "DOXMAXIMA_TRANSLATE_RESPONSE", id: event.data.id, translatedVtt: event.data.vttText }, "*");
+                return;
+            }
+            
+            // Background (Service Worker)'a Çeviri İsteği Gönder
+            chrome.runtime.sendMessage({
+                type: "START_TRANSLATE",
+                filteredText: filteredText,
+                apiKey: settings.apiDeepl,
+                sourceLang: "auto",
+                targetLang: settings.aiMode,
+                chunkSize: settings.chunkDeepl || 150,
+                videoId: currentVideoId
+            }, (response) => {
+                if (response && response.success) {
+                    try {
+                        console.log("[Doxmaxima] Çeviri başarıyla alındı. Orijinal VTT ile birleştiriliyor (Rebuild)...");
+                        const finalVtt = window.DoxmaximaSubRebuild.rebuildSubtitle(event.data.vttText, response.translatedText);
+                        
+                        // İndirme ve cache için hafızada tut
+                        sonCeviriliAltyaziVerisi = finalVtt;
+                        
+                        window.postMessage({ type: "DOXMAXIMA_TRANSLATE_RESPONSE", id: event.data.id, translatedVtt: finalVtt }, "*");
+                    } catch (e) {
+                        console.error("[Doxmaxima] Rebuild hatası:", e);
+                        window.postMessage({ type: "DOXMAXIMA_TRANSLATE_RESPONSE", id: event.data.id, translatedVtt: event.data.vttText }, "*");
+                    }
+                } else {
+                    console.error("[Doxmaxima] Service Worker Çeviri Hatası:", response ? response.error : "Bilinmeyen Hata");
+                    window.postMessage({ type: "DOXMAXIMA_TRANSLATE_RESPONSE", id: event.data.id, translatedVtt: event.data.vttText }, "*");
+                }
+            });
+        });
+    }
 });
 
 // 3. Popup'tan (ui.html) gelen indirme isteğini dinliyoruz
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === "DOWNLOAD_SUBTITLE_MANUAL" || request.type === "DOWNLOAD_SUBTITLE_CLEAN" || request.type === "DOWNLOAD_SUBTITLE_FILTERED") {
+    if (request.type === "DOWNLOAD_SUBTITLE_MANUAL" || request.type === "DOWNLOAD_SUBTITLE_CLEAN" || request.type === "DOWNLOAD_SUBTITLE_FILTERED" || request.type === "DOWNLOAD_SUBTITLE_TRANSLATED") {
         if (!sonAltyaziVerisi) {
             alert("Lütfen önce videodan bir altyazı seçin veya altyazıyı açın.");
             return;
@@ -27,6 +80,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         let fileText = sonAltyaziVerisi.text;
         let fileName = sonAltyaziVerisi.filename;
+        
+        if (request.type === "DOWNLOAD_SUBTITLE_TRANSLATED") {
+            if (!sonCeviriliAltyaziVerisi) {
+                alert("Henüz yapay zeka çevirisi tamamlanmamış veya Çeviri Modu kapalı.");
+                return;
+            }
+            fileText = sonCeviriliAltyaziVerisi;
+            fileName = fileName.replace('.vtt', '_AI_Cevirili.vtt');
+            console.log("[Doxmaxima] Çevirili altyazı indiriliyor:", fileName);
+        }
 
         // Temizlenmiş veya Filtreli indirme isteniyorsa önce temizleme algoritmasını çalıştır
         if (request.type === "DOWNLOAD_SUBTITLE_CLEAN" || request.type === "DOWNLOAD_SUBTITLE_FILTERED") {

@@ -29,8 +29,10 @@ window.DoxmaximaSubCleaner = {
                 } else if(ln.trim() === ''){
                     inBlock = false;
                 } else if(inBlock && !ln.includes('WEBVTT') && !ln.includes('Kind:') && !ln.includes('Language:')) {
-                    // Metin satırı: HTML boşluklarını ve sıfır genişlikli karakterleri temizle
-                    ln = ln.replace(/&nbsp;/gi, ' ').replace(/&#160;/gi, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '');
+                    // Metin satırı: HTML boşluklarını, entitelerini ve sıfır genişlikli karakterleri temizle
+                    ln = ln.replace(/&nbsp;/gi, ' ').replace(/&#160;/gi, ' ')
+                           .replace(/&gt;/gi, '>').replace(/&lt;/gi, '<').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/g, "'").replace(/&#34;/g, '"')
+                           .replace(/[\u200B-\u200D\uFEFF]/g, '');
                     // Birden fazla boşluğu tek boşluk + yeni satır yap
                     ln = ln.replace(/ {2,}/g, ' \n');
 
@@ -123,8 +125,10 @@ window.DoxmaximaSubCleaner = {
             }
 
             if (text) {
-                // HTML özel boşluk karakterlerini ve görünmez karakterleri temizle
-                text = text.replace(/&nbsp;/gi, ' ').replace(/&#160;/gi, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '');
+                // HTML özel boşluk karakterlerini, entitelerini ve görünmez karakterleri temizle
+                text = text.replace(/&nbsp;/gi, ' ').replace(/&#160;/gi, ' ')
+                           .replace(/&gt;/gi, '>').replace(/&lt;/gi, '<').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/g, "'").replace(/&#34;/g, '"')
+                           .replace(/[\u200B-\u200D\uFEFF]/g, '');
                 // Birden fazla boşluğu tek boşluk + yeni satır yap
                 text = text.replace(/ {2,}/g, ' \n');
 

@@ -128,15 +128,18 @@
 
     <div class="settings-container">
         <!-- Altyazı İndirme Butonları -->
-        <div class="setting-group" style="display: flex; gap: 10px; justify-content: center; align-items: center; padding: 5px 0 20px 0; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
-            <button id="download-sub-btn" style="background: #334155; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+        <div class="setting-group" style="display: flex; gap: 10px; justify-content: center; align-items: center; padding: 5px 0 20px 0; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px; flex-wrap: wrap;">
+            <button id="download-sub-btn" style="background: #334155; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: calc(50% - 5px); transition: background 0.2s;">
                 <span data-i18n="download_btn">Orijinal İndir</span>
             </button>
-            <button id="download-clean-sub-btn" style="background: #0ea5e9; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+            <button id="download-clean-sub-btn" style="background: #0ea5e9; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: calc(50% - 5px); transition: background 0.2s;">
                 <span data-i18n="download_clean_btn">Temizlenmiş İndir</span>
             </button>
-            <button id="download-filtered-sub-btn" style="background: #10b981; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: 100%; transition: background 0.2s;">
+            <button id="download-filtered-sub-btn" style="background: #10b981; color: white; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: calc(50% - 5px); transition: background 0.2s;">
                 <span data-i18n="download_filtered_btn">Filtreli İndir</span>
+            </button>
+            <button id="download-translated-sub-btn" style="background: #eab308; color: black; border: none; padding: 12px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; width: calc(50% - 5px); transition: background 0.2s; box-shadow: 0 0 8px rgba(234, 179, 8, 0.3);">
+                <span data-i18n="download_translated_btn">Çeviriyi İndir</span>
             </button>
         </div>
 

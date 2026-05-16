@@ -46,8 +46,16 @@ class DoxSubtitleManager {
         // Kullanıcı arayüzden (ui.html) ayar değiştirdiğinde anlık dinle
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.type === "UPDATE_DOX_SETTINGS") {
+                const oldSettings = this.settings;
                 this.settings = request.payload;
                 this.applyStyles();
+                
+                // Çeviri butonu açılıp/kapandığında veya hedef dil değiştiğinde YouTube altyazılarını tazele
+                if (oldSettings && 
+                   (oldSettings.ceviriEnabled !== this.settings.ceviriEnabled || 
+                    oldSettings.aiMode !== this.settings.aiMode)) {
+                    this.reloadYouTubeSubtitles();
+                }
             }
         });
 
@@ -210,6 +218,26 @@ class DoxSubtitleManager {
                     e.stopPropagation();
                 }
             }, true);
+        }
+    }
+
+    // YouTube altyazı isteğini yeniden tetiklemek için Altyazı butonunu (CC) simüle et
+    reloadYouTubeSubtitles() {
+        console.log("[Doxmaxima] Çeviri ayarı değişti, YouTube altyazıları tazeleniyor...");
+        const btn = document.querySelector('.ytp-subtitles-button');
+        if (btn) {
+            const isPressed = btn.getAttribute('aria-pressed') === 'true';
+            if (isPressed) {
+                // Önce kapat
+                btn.click();
+                // Kısa bir süre sonra tekrar açarak XHR/Fetch'in yeniden atılmasını sağla
+                setTimeout(() => {
+                    const checkBtn = document.querySelector('.ytp-subtitles-button');
+                    if (checkBtn && checkBtn.getAttribute('aria-pressed') === 'false') {
+                        checkBtn.click();
+                    }
+                }, 150);
+            }
         }
     }
 
