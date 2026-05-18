@@ -36,11 +36,26 @@ class DoxSubtitleManager {
             console.log("Doxmaxima: Yeni video yüklendi, stiller uygulanıyor...");
             this.applyStyles();
             
+            // Yeni video yüklendiğinde çeviriyi kapat (Sayfa/Link değiştiğinde kapanır)
+            if (this.settings && this.settings.ceviriEnabled) {
+                console.log("[Doxmaxima] Video değişti, Çeviri Modu kapatılıyor.");
+                this.settings.ceviriEnabled = false;
+                chrome.storage.sync.set({ ceviriEnabled: false }, () => {
+                    this.updateYouTubeButtonState();
+                    this.reloadYouTubeSubtitles(); // Altyazıyı orijinaline çek
+                });
+            }
+            
             // Eğer player değiştiyse observer'ı tekrar bağla
             const playerEl = document.getElementById('movie_player');
             if (playerEl && this.resizeObserver) {
                 this.resizeObserver.observe(playerEl);
             }
+            
+            // Yeni video yüklendiğinde butonu inject etmeyi dene
+            // controlsObserverActive'i sıfırla ki observer yeniden bağlansın
+            this.controlsObserverActive = false;
+            this.observeYouTubeControls();
         });
 
         // Kullanıcı arayüzden (ui.html) ayar değiştirdiğinde anlık dinle
@@ -49,6 +64,7 @@ class DoxSubtitleManager {
                 const oldSettings = this.settings;
                 this.settings = request.payload;
                 this.applyStyles();
+                this.updateYouTubeButtonState();
                 
                 // Çeviri butonu açılıp/kapandığında veya hedef dil değiştiğinde YouTube altyazılarını tazele
                 if (oldSettings && 
@@ -77,11 +93,15 @@ class DoxSubtitleManager {
                     const el = document.getElementById('movie_player');
                     if (el) {
                         this.resizeObserver.observe(el);
+                        this.observeYouTubeControls();
                         obs.disconnect();
                     }
                 });
                 observer.observe(document.body, { childList: true, subtree: true });
             }
+            
+            // Başlangıçta observer'ı başlat
+            this.observeYouTubeControls();
         }
 
         // Özel Sürükleme (Drag) Mantığı - YouTube'un bozuk sistemini eziyoruz
@@ -238,6 +258,164 @@ class DoxSubtitleManager {
                     }
                 }, 150);
             }
+        }
+    }
+
+    // YouTube oynatıcısı içerisine Doxmaxima butonu ekler
+    observeYouTubeControls() {
+        if (this.controlsObserverActive) return; // Zaten gözlemliyorsak çık
+        
+        const tryObserve = () => {
+            const controls = document.querySelector('.ytp-chrome-controls'); // Tüm alt çubuğu gözlemle
+            if (controls) {
+                this.controlsObserverActive = true;
+                
+                // YouTube bazen çubuğu yeniden render eder, silinirse geri eklemek için observer kuruyoruz
+                const observer = new MutationObserver(() => {
+                    if (!document.getElementById('doxmaxima-yt-btn')) {
+                        this.injectYouTubeButton();
+                    }
+                });
+                
+                observer.observe(controls, { childList: true, subtree: true });
+                this.injectYouTubeButton(); // İlk ekleme
+            } else {
+                setTimeout(tryObserve, 1000);
+            }
+        };
+        tryObserve();
+    }
+
+    injectYouTubeButton() {
+        const rightControls = document.querySelector('.ytp-right-controls');
+        if (!rightControls) return;
+        
+        let doxBtn = document.getElementById('doxmaxima-yt-btn');
+        if (!doxBtn) {
+            // Buton sarmalayıcı (tooltip için position:relative gerekiyor)
+            const wrapper = document.createElement('div');
+            wrapper.id = 'doxmaxima-yt-wrapper';
+            wrapper.style.cssText = [
+                'position:relative',
+                'display:inline-flex',
+                'align-items:center',
+                'justify-content:center',
+                'height:100%',
+            ].join(';');
+
+            // ---- Tooltip ----
+            const tooltip = document.createElement('div');
+            tooltip.id = 'doxmaxima-yt-tooltip';
+            tooltip.style.cssText = [
+                'position:absolute',
+                'bottom:calc(100% + 8px)',
+                'left:50%',
+                'transform:translateX(-50%)',
+                'background:rgba(28,28,28,0.9)',
+                'color:#fff',
+                'font-size:12px',
+                'font-family:Roboto,Arial,sans-serif',
+                'font-weight:500',
+                'white-space:nowrap',
+                'padding:5px 9px',
+                'border-radius:2px',
+                'pointer-events:none',
+                'opacity:0',
+                'transition:opacity 0.15s ease',
+                'z-index:99999',
+                'line-height:1.4',
+                'letter-spacing:0.01em',
+            ].join(';');
+            wrapper.appendChild(tooltip);
+
+            // ---- Asıl buton ----
+            doxBtn = document.createElement('button');
+            doxBtn.id = 'doxmaxima-yt-btn';
+            doxBtn.className = 'ytp-button dox-yt-btn';
+            // title kaldırıldı — native tooltip ile çift kutu olmasın
+            doxBtn.style.cssText = [
+                'display:inline-flex',
+                'align-items:center',
+                'justify-content:center',
+                'width:48px',
+                'height:100%',
+                'padding:0',
+                'cursor:pointer',
+                'border:none',
+                'background:transparent',
+            ].join(';');
+
+            const iconUrl = chrome.runtime.getURL('resimler/icon.png');
+            const img = document.createElement('img');
+            img.src = iconUrl;
+            img.style.cssText = [
+                'width:24px',
+                'height:24px',
+                'transition:filter 0.3s ease,opacity 0.3s ease',
+                'pointer-events:none',
+            ].join(';');
+            doxBtn.appendChild(img);
+            wrapper.appendChild(doxBtn);
+
+            // ---- Tooltip hover ----
+            wrapper.addEventListener('mouseenter', () => {
+                tooltip.style.opacity = '1';
+            });
+            wrapper.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
+
+            // ---- Tıklama ----
+            doxBtn.addEventListener('click', () => {
+                if (this.settings) {
+                    const newState = !this.settings.ceviriEnabled;
+                    this.settings.ceviriEnabled = newState;
+                    chrome.storage.sync.set({ ceviriEnabled: newState }, () => {
+                        this.updateYouTubeButtonState();
+                        this.reloadYouTubeSubtitles();
+                    });
+                }
+            });
+
+            // ---- DOM'a ekle ----
+            // NOT: insertBefore sadece doğrudan çocuk düğümlerle çalışır.
+            const subBtn = rightControls.querySelector('.ytp-subtitles-button');
+            if (subBtn && subBtn.parentNode === rightControls) {
+                rightControls.insertBefore(wrapper, subBtn);
+            } else if (subBtn && subBtn.parentNode) {
+                subBtn.parentNode.insertBefore(wrapper, subBtn);
+            } else {
+                rightControls.prepend(wrapper);
+            }
+        }
+        
+        // Eklendikten sonra mevcut duruma göre ikon ve tooltip metnini güncelle
+        this.updateYouTubeButtonState();
+    }
+
+    updateYouTubeButtonState() {
+        const doxBtn = document.getElementById('doxmaxima-yt-btn');
+        const tooltip = document.getElementById('doxmaxima-yt-tooltip');
+        const isActive = this.settings && this.settings.ceviriEnabled;
+
+        if (doxBtn) {
+            const img = doxBtn.querySelector('img');
+            if (img) {
+                if (isActive) {
+                    // Aktifken orijinal renk
+                    img.style.filter = 'none';
+                    img.style.opacity = '1';
+                } else {
+                    // Pasifken gri
+                    img.style.filter = 'grayscale(100%) opacity(70%)';
+                    img.style.opacity = '0.7';
+                }
+            }
+        }
+
+        // Tooltip metnini duruma göre güncelle
+        if (tooltip) {
+            tooltip.textContent = isActive ? 'Çeviri Kapat' : 'Çeviri Başlat';
         }
     }
 

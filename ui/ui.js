@@ -489,4 +489,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
     }
+
+    // Oynatıcıdaki (YouTube) butondan ayar değiştiğinde popup'ı anlık güncelle (Senkronizasyon)
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'sync' && changes.ceviriEnabled) {
+            if (toggleCeviri) {
+                toggleCeviri.checked = changes.ceviriEnabled.newValue;
+            }
+        }
+    });
 });

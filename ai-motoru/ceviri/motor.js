@@ -76,10 +76,20 @@ export const DoxmaximaEngine = {
                 });
                 
             } catch (error) {
-                console.error(`%c[HATA] Paket ${i+1} çevrilemedi, orijinaller kullanılıyor.`, 'color: red;', error);
-                chunk.forEach(item => {
-                    finalTranslations[item.index] = item.originalText;
-                });
+                if (error.message === "QUOTA_EXCEEDED") {
+                    // Kota doldu — kalan tüm paketler için orijinalleri doldur ve döngüyü kır
+                    for (let j = i; j < chunks.length; j++) {
+                        chunks[j].forEach(item => {
+                            finalTranslations[item.index] = item.originalText;
+                        });
+                    }
+                    break; // Daha fazla istek gönderme
+                } else {
+                    console.error(`%c[HATA] Paket ${i+1} çevrilemedi, orijinaller kullanılıyor.`, 'color: red;', error);
+                    chunk.forEach(item => {
+                        finalTranslations[item.index] = item.originalText;
+                    });
+                }
             }
         }
         

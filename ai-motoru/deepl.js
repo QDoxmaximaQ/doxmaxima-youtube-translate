@@ -67,6 +67,10 @@ export const DoxmaximaDeepL = {
             });
 
             if (!res.ok) {
+                if (res.status === 456) {
+                    console.warn("⚠️ [Doxmaxima] DeepL aylık ücretsiz kota doldu. Yeni ay başında sıfırlanır.");
+                    throw new Error("QUOTA_EXCEEDED");
+                }
                 const errorData = await res.json().catch(() => ({}));
                 throw new Error(`DeepL API Hatası (${res.status}): ${errorData.message || res.statusText || "Çeviri hatası"}`);
             }
@@ -74,6 +78,7 @@ export const DoxmaximaDeepL = {
             const data = await res.json();
             return data.translations.map(t => t.text);
         } catch (error) {
+            if (error.message === "QUOTA_EXCEEDED") throw error; // zaten loglandı, tekrar loglanmasın
             console.error("DeepL Çeviri Hatası:", error);
             throw error;
         }

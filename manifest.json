@@ -52,6 +52,7 @@
             "resources": [
                 "altyaziyi-temizleme/altyazi-bulma/altyazi-bulma.js",
                 "altyaz*/*",
+                "resimler/*",
                 "*"
             ],
             "matches": [
